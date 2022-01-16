@@ -21,7 +21,6 @@ class VAE_Base(nn.Module):
     # Returns mean + epsilon * L + epsilon * std if L is defined
     # Returns mean + epsilon * std
     def reparameterize(self, mu, logvar, L=torch.FloatTensor([])):
-        
         if mu.size()[0] == 0:
             return torch.FloatTensor([])
         std = torch.exp(0.5 * logvar)

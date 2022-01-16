@@ -1,4 +1,0 @@
-The file already exists
-/home/conradli/software/create_psf/create_psf_dihe /1PRB/1prb_pnon.pdb /home/conradli/SAC-for-H-Bond-Learning/Octree/FromBU/oct-example/params/pdbamino_new.rtf /home/conradli/SAC-for-H-Bond-Learning/data/1PRB/1prb_pnon.psf
-obabel /1PRB/1prb_pnon.pdb -O /home/conradli/SAC-for-H-Bond-Learning/data/1PRB/1prb_pnon.mol2
-[]

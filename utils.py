@@ -35,7 +35,8 @@ def hard_update(target, source):
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(param.data)
 
-# Normalizes an angle in betwen -180 and 180 or 
+# Normalizes an angle in between -180 and 180 degrees or -pi and pi radians
+# in_degrees(bool): if True, angle is in degrees
 def normalize_angle(angle, in_degrees=True):
     if in_degrees:
         angle = angle % 360
@@ -100,7 +101,9 @@ def batch_flat_to_tensors(flat_tensor, tensor_shapes):
         start_dim += total_dim
     return tuple(unflattened_tensors)
 
-# Append new pdb to current pdb file
+# Appends a new pdb file to current pdb file
+# new_pdb_file (str): path to new pdb file
+# cur_pdb_file (str): path to current pdb file
 def append_pdb(new_pdb, cur_pdb_file):
     with open(cur_pdb_file, "a") as writer:
         new_pdb_file = open(new_pdb, "r")
@@ -141,6 +144,7 @@ def write_array(arr, output_file=None, file_type=None):
     return
 
 # Creates a one hot encoding from an array of objects
+# arr (iterable): iterable of objects
 def generate_one_hot_encoding(arr):
     # Determine number of unique objects
     np_arr = np.array(arr)

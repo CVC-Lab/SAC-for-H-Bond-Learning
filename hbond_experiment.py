@@ -15,7 +15,7 @@ from pyrosetta import *
 from pyrosetta.toolbox import *
 from pyrosetta.rosetta.core.scoring import ScoreType 
 # Custom Libraries
-from mol_processors.PDB_processor import download_pdb, get_coords, pdb_to_intcoords, visualize_protein
+from mol_processors.pdb_processor import download_pdb, get_coords, pdb_to_intcoords, visualize_protein
 from mol_processors.Protein import Prot
 %pylab inline
 %load_ext autoreload 
