@@ -26,7 +26,7 @@ class SingleProtEnv(gym.Env):
         # Set time step
         self.time_step = 0
         self.total_step = 0
-        self.output_pdb = None
+        self.output_pdb = "output.pdb"
         # Initialize protein
         self.prot = Prot(pdb_file, psf_file, mol2_file, prm_file, rtf_file, aprm_file, pdb_id, seq=seq)
         # Get list of dihedral angles that the agent is allowed to change
@@ -70,7 +70,7 @@ class SingleProtEnv(gym.Env):
         #angle_change = np.tanh(angle_change)
         # Save the each time step
         if save and self.output_pdb != None:
-            self.prot.write_to_pdb("./results/temp.pdb")
+            self.prot.write_to_pdb("./results/temp."
             append_pdb("./results/temp.pdb", self.output_pdb)
 
         eps=0.001

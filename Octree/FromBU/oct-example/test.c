@@ -921,7 +921,7 @@ int main( int argc, char *argv[ ] )
            printf( "Building octree... " ); fflush( stdout );
            // build octree
            start = clock( );
-           if ( !build_octree( &octree, 60, 6, 1.0, ag ) )
+           if ( !( &octree, 60, 6, 1.0, ag ) )
              {
                print_error( "Failed to build octree!" );
                return 1;
