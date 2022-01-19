@@ -16,7 +16,7 @@ from pyrosetta.toolbox import *
 from pyrosetta.rosetta.core.scoring import ScoreType 
 # Custom Libraries
 from mol_processors.pdb_processor import download_pdb, get_coords, pdb_to_intcoords, visualize_protein
-from mol_processors.Protein import Prot
+from mol_processors.RosettaProtein import RosettaProt
 %pylab inline
 %load_ext autoreload 
 %autoreload 2
@@ -34,7 +34,7 @@ pdb_out_file = PDB_DIR + "1cq0_pnon-outo.pdb"
 psf_file = PDB_DIR + "1cq0_pnon.psf"
 # Set flags
 download_protein = True # Flag to download protein
-test_prot = Prot(pdb_id=pdb_id)
+test_prot = RosettaProt(pdb_id=pdb_id)
 # %%
 '''
 print("Initialization")
@@ -55,7 +55,7 @@ outoFile = bytes(path_prefix + "-outo.pdb", encoding="ascii") # Output for octre
 prmFile = bytes(param_prefix + "parm_new.prm", encoding="ascii")
 rtfFile = bytes(param_prefix + "pdbamino_new.rtf", encoding="ascii")
 aprmFile = bytes(param_prefix + "atoms.0.0.6.prm.ms.3cap+0.5ace.Hr0rec", encoding="ascii")
-prot = Prot(pdbFile, psfFile, mol2File, prmFile, rtfFile, aprmFile, outnFile, outoFile)
+prot = RosettaProt(pdbFile, psfFile, mol2File, prmFile, rtfFile, aprmFile, outnFile, outoFile)
 '''
 
 # %%

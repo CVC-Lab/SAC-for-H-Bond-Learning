@@ -1,7 +1,7 @@
 from os import stat_result
 import numpy as np
 from agents.Base_Agent import Base_Agent
-from mol_processors.Protein import Prot
+from mol_processors.RosettaProtein import RosettaProt
 from utils import generate_one_hot_encoding, tensors_to_batch_flat, batch_flat_to_tensors
 import torch
 import torch.nn as nn

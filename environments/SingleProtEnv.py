@@ -1,13 +1,10 @@
 from utils import tensors_to_flat, append_pdb
 from environments.EnvBase import EnvBase
-from mol_processors.Protein import Prot
+from mol_processors.RosettaProtein import RosettaProt
 import numpy as np
 import torch
 import gym
 from gym import spaces
-from gym.utils import seeding
-import math
-import wandb
 
 
 class SingleProtEnv(gym.Env):
@@ -28,7 +25,7 @@ class SingleProtEnv(gym.Env):
         self.total_step = 0
         self.output_pdb = "output.pdb"
         # Initialize protein
-        self.prot = Prot(pdb_file, psf_file, mol2_file, prm_file, rtf_file, aprm_file, pdb_id, seq=seq)
+        self.prot = RosettaProt(pdb_file, psf_file, mol2_file, prm_file, rtf_file, aprm_file, pdb_id, seq=seq)
         # Get list of dihedral angles that the agent is allowed to change
         self.torsion_ids_to_change = self.prot.get_torsion_ids(torsion_type=hyperparameters["torsions_to_change"])
         # Set boundaries on action and state space

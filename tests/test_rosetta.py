@@ -17,7 +17,7 @@ from pyrosetta.rosetta.core.chemical import AtomTypeSet
 from pyrosetta.rosetta.protocols.relax import FastRelax
 # Custom Libraries
 from mol_processors.pdb_processor import download_pdb, get_coords, pdb_to_intcoords, visualize_protein
-from mol_processors.Protein import Prot
+from mol_processors.RosettaProtein import RosettaProt
 from utils import write_array
 
 # Initialize Rosetta
@@ -34,7 +34,7 @@ pdb_out_file = PDB_DIR + "1cq0_pdb2pqr_charmm-outn.pdb"
 psf_file = PDB_DIR + "1bdd_pdb2pqr_charmm.psf"
 # Set flags
 download_protein = True # Flag to download protein
-test_prot = Prot(pdb_id=pdb_id, pdb_file=pdb_init_file, psf_file=psf_file)
+test_prot = RosettaProt(pdb_id=pdb_id, pdb_file=pdb_init_file, psf_file=psf_file)
 
 test_prot.sample_bbdep_rotamers()
 test_prot.pack_prot()

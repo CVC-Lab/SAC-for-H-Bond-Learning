@@ -7,6 +7,8 @@ import MDAnalysis as mda
 from MDAnalysis.analysis.bat import BAT
 import nglview as nv
 
+from Bio.PDB import PDBParser, Select, PDBIO
+
 # Dictionary for converting three letter residue abbreviations to 1 letter code 
 res_3to1 = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
