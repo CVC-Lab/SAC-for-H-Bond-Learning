@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import os
+from collections import Iterable
 from datetime import datetime as dt
 import shutil
 from matplotlib.patches import Ellipse
@@ -232,6 +233,33 @@ def check_nan (tensor):
     if(torch.sum (torch.isnan (tensor)) > 0):
         return True
     return False 
+
+def binary_search(self, arr: Iterable, lb: int, ub: int, target):
+    """
+    Implements binary search
+
+    Args:
+        arr: list of elements
+        lb: lower bound
+        ub: upper bound
+        target: target value
+    """
+    # Base case
+    if ub >= lb:
+        mid = lb + (ub - lb) // 2
+
+        # We found the target
+        if arr[mid] == target:
+            return mid
+        # Check left if target < mid
+        elif arr[mid] > target:
+            return self._binary_search(arr, lb, mid-1, target)
+        # Check right if target > mid
+        else:
+            return self._binary_search(arr, mid + 1, ub, target)
+    # Could not find target
+    else:
+        return -1
 
 if __name__ == '__main__':
     print ("No compile errors")
