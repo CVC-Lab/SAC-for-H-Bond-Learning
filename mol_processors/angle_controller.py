@@ -97,15 +97,13 @@ class BackboneDihedralLibrary:
     This class parses a Dihedral library file (formatted like Dunbrack's) and
     provides functions to sample from the distributuion of backbone dihedrals
     """
-    def __init__(self, backbone_lib_path: str, store_type: str ="ram"):
+    def __init__(self, backbone_lib_path: str):
         """
         Creates a BackboneDihedralLibrary object given the directory with the Ramachandran library files
 
         Args:
             backbone_lib_dir: the directory containing the Ramachandran library file
-            store_type: the type of storage to use for the rotamer library (i.e. "ram" or "disk")
         """
-        self.store_type = store_type
         self.rama_left_path = os.path.join(backbone_lib_path, "rama_left.txt" )
         self.rama_right_path = os.path.join(backbone_lib_path, "rama_right.txt")
         if not os.path.isfile(self.rama_left_path) or not os.path.isfile(self.rama_right_path):
@@ -194,7 +192,7 @@ def set_torsion_angles(protein: Prot, res_num: Iterable[int], angle_key: Iterabl
     '''
     return
 
-# TODO: Implement actually editing the pdb structure
+# TODO: Implement actually editing the pdb structure. Must be able to distinguish chi angles from phi and psi
 def sample_dunbrack_sidechain_torsions(protein: Prot, rot_lib: RotamerLibrary, fixed_angles: Iterable[(int, str)] = []) -> None:
     # Sample from the posterior distribution
     rot_probs, rot_samples = rot_lib.get_rotamer_dist("arg", -20, 120)
@@ -206,6 +204,7 @@ def sample_dunbrack_sidechain_torsions(protein: Prot, rot_lib: RotamerLibrary, f
     rot_sample = np.random.normal(rot_mean, rot_std)
     return
 
+# TODO: Implement actually editing the pdb structure
 def sample_dunbrack_backbone_dihedrals(protein: Prot, dihedral_lib: BackboneDihedralLibrary, fixed_res: Iterable[int] = []) -> None:
     phi_psi_probs = dihedral_lib.get_backbone_dist("arg", "val", "leu")
     # Sample the lower left corner of 5 x 5 phi-psi grid
@@ -215,8 +214,7 @@ def sample_dunbrack_backbone_dihedrals(protein: Prot, dihedral_lib: BackboneDihe
     # Sample uniformly from 5 x 5 grid with phi_psi_sample at lower left corner
     phi_sample = np.random.uniform(lower_left_phi, lower_left_phi + 5)
     psi_sample = np.random.uniform(lower_left_psi, lower_left_psi + 5)
-    return phi_sample, psi_sample
-
+    return
 
 if __name__ == "__main__":
     import tracemalloc
@@ -224,7 +222,7 @@ if __name__ == "__main__":
     rot_lib = "/home/conradli/SAC-for-H-Bond-Learning/data/torsion_libs/Dunbrack2011-5/ExtendedOpt1-5"
     bb_lib = "/home/conradli/SAC-for-H-Bond-Learning/data/torsion_libs/ramachandran/"
     aa = "HIS"
-    lib = BackboneDihedralLibrary(bb_lib, store_type="ram")
+    lib = BackboneDihedralLibrary(bb_lib)
 
     
     
