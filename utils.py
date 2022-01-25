@@ -261,5 +261,20 @@ def binary_search(self, arr: Iterable, lb: int, ub: int, target):
     else:
         return -1
 
+# TODO: Move to utils
+def parse_biopython_torsion_id(torsion_id):
+    """
+    Parses biopythons torsion id.
+
+    Returns:
+        output: a 4 x 3 list containg the 4 atom ids (i.e. residue number, residue abbreviation, atom name)
+    """
+    atom_ids = torsion_id.split(":")
+    output = []
+    for index, atom_id in enumerate(atom_ids):
+        atom_id_split = atom_id.split("_")
+        output.append([atom_id_split[0], atom_id_split[1], atom_id_split[2]])
+    return output
+
 if __name__ == '__main__':
     print ("No compile errors")

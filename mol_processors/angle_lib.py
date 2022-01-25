@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-from constants import RAMA_LINES_PER_NEIGHBOR, RAMA_LINES_PER_RESIDUE, RAMA_CHARS_PER_LINE, RAMA_RES_ORDER, RAMA_NEIGHBOR_ORDER
+from mol_processors.constants import RAMA_LINES_PER_NEIGHBOR, RAMA_LINES_PER_RESIDUE, RAMA_CHARS_PER_LINE, RAMA_RES_ORDER, RAMA_NEIGHBOR_ORDER
 
 # TODO: non_rot_dist_type set to "density" and store_type set to "ram" not supported right now
 class RotamerLibrary:

@@ -15,7 +15,7 @@ import torch
 # Import Pyrosetta
 from pyrosetta import *
 # Import custom modules
-from environments.SingleProtEnv import SingleProtEnv
+from environments.RosettaProtEnv import SingleProtEnv
 from utilities.data_structures.replay_memory import ReplayMemory 
 from agents.hbond_agent_new import SAC
 
