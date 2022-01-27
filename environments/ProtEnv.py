@@ -24,6 +24,7 @@ class ProtEnv(gym.Env):
             dtype=np.float32
         )
         # Observation space for protein
+        # TODO: 
         self.observation_space = spaces.Box(
             low=self.low_state,
             high=self.high_state,
@@ -32,9 +33,29 @@ class ProtEnv(gym.Env):
         )
         return
     
-
-    def calc_energy(self)
-        return
+    def bond_length_energy(self):
+        """
+        Computes a harmonic bond length energy term
+        """
+        return 0
+    
+    def bond_angle_energy(self):
+        """
+        Computes a harmonic bond angle energy term
+        """
+        return 0
+    
+    def torsion_angle_energy(self):
+        """
+        Computes a torsion angle energy term
+        """
+        return 0
+    
+    def nonbonded_energy(self):
+        """
+        Computes a nonbonded energy term (i.e. Coulombic + Lennard-Jones)
+        """
+        return 0
 
     def step(self, action):
         state = None
@@ -49,6 +70,3 @@ class ProtEnv(gym.Env):
     def get_reward(self):
         return
     
-
-    def te 
-        
