@@ -1,153 +1,238 @@
+# Import system modules
+import sys
 import os
-import torch.nn as nn
-import torch.nn.functional as F
+from datetime import datetime
+from os.path import dirname, abspath
+import itertools
+
+from torch import onnx
+from wandb import wandb_agent
+sys.path.append(dirname(dirname(abspath(__file__))))
+# Import Python Modules
+import numpy as np
+import wandb
 import torch
-from torch.optim import Adam
-from utils import soft_update, hard_update, create_log_gaussian, logsumexp
-from custom_nn_modules.Graph_NNs import GraphConvolution, GraphAggregation, MLP
-from utilities.data_structures.replay_memory import ReplayMemory
-from agents.actor_critic_net import Actor, Critic
+# Import Pyrosetta
+from pyrosetta import *
+# Import custom modules
+from environments.SingleProtEnv import SingleProtEnv
+from utilities.data_structures.replay_memory import ReplayMemory 
+from agents.hbond_agent_new import SAC
 
-class SAC(object):
-    def __init__(self, action_space, env, hyperparams):
+#Inputs
+# Define some constants
+PDB_DIR = "../data/1BDD/"
+OCTREE_DIR = "../Octree"
+OUTPUT_DIR = "../data/1BDD/output"
+# Define some parameters
+pdb_id = "1bdd" # The pdb id of the input protein
+dcd_file = ""
 
-        # Hyperparametres
-        self.gamma = hyperparams["discount_rate"]
-        self.tau = hyperparams["tau"]
-        self.alpha = hyperparams["alpha"]
-        self.lr = hyperparams["lr"]
-        self.policy_type = hyperparams["policy"]
-        self.target_update_interval = hyperparams["target_update_interval"]
-        self.automatic_entropy_tuning = hyperparams["automatic_entropy_tuning"]
-        self.environment = env
-        # Layer Hyperparams
-        self.node_dim = len(self.environment.prot.atom_chem_features[0])
-        self.num_nodes = len(self.environment.prot.atom_chem_features)
-        self.edge_dim = 1
-        self.input_action_dim = len(self.environment.torsion_ids_to_change)
-        print("We will change", self.input_action_dim, "torsions")
-        crit_hyp = hyperparams["Critic"]
-        act_hyp = hyperparams["Actor"]
-        self.tensor_shapes = [(self.num_nodes, self.node_dim), (self.num_nodes, self.num_nodes)]
+
+# Hyperparameters
+hyperparameters =  {
+    "output_model": "./results/hbond_agent_model",
+    "device": torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+    "replay_size": 10000000,
+    "seed": 123456,
+    "start_steps": 500, # Num steps until we start sampling
+    "batch_size": 256,
+    "updates_per_step": 1,
+    "num_steps": 100000,
+     # Max total number of time steps
+    "eval": True,
+    "discount_rate": 1, 
+    "tau": 0.005,
+    "alpha": 0.2,
+    "lr": 0.0003,
+    "policy": "Gaussian",
+    "target_update_interval": 1,
+    "env_name": "SingleProtEnv",
+    "automatic_entropy_tuning": True,
+    "output_pdb": "./results/AA/AA_pont_dynamite_train.pdb", # Output pdb of training episodes
+    "output_pdb_test": "./results/AA/AA_pont_dynamite_test.pdb", # Output pdb of testing episodes
+    "Env": {
+        "torsions_to_change": "all", # all, backbone, or sidechain
+        "adj_mat_type": "bonded", 
+        "step_size": 0.5,
+        "discount_rate": 1,
+        "state_type": "torsions", # torsions, atomic
+        "discount_rate_threshold": 100,
+        "max_time_step": 1500  # Maximum time step for each episode
+    },
+    "Actor": {
+        "conv_dim":[[4 ,16], 128, [32, 64]], # Graph Convolution hidden dims, Aggregation output layer, MLP linear layers
+    },
+    "Critic": {
+        "conv_dim":[[4 ,16], 128, [32, 64]],
+        "z_dim": 8, # Output linear layer for processing state
+        "action_dim": [32, 32] # MLP layer hidden dims to process actions
+    }
+}
+
+
+# Extract hyperparams
+output_pdb = hyperparameters['output_pdb'] 
+replay_size = hyperparameters["replay_size"]
+seed = hyperparameters["seed"]
+start_steps = hyperparameters["start_steps"]
+batch_size = hyperparameters["batch_size"]
+updates_per_step = hyperparameters["updates_per_step"]
+num_steps = hyperparameters["num_steps"]
+policy = hyperparameters["policy"]
+automatic_entropy_tuning = hyperparameters["automatic_entropy_tuning"]
+env_name = hyperparameters["env_name"]
+do_eval = hyperparameters["eval"]
+output_model_file = hyperparameters["output_model"]
+output_pdb_test = hyperparameters["output_pdb_test"]
+device = hyperparameters["device"]
+
+wandb_allowed = False
+# Print Num Gpus
+print("We have", torch.cuda.device_count(), "GPUs")
+# Init Wandb
+mode = "online" if wandb_allowed else "disabled"
+project_name = "Sidechain Packing"
+run_name = "run_" + datetime.now().strftime("%m:%d:%Y:%H:%M:%S")
+group = "Dialanine"
+notes = ""
+wandb.login()
+wandb.init(project=project_name, name=run_name, group=group, notes=notes, config=hyperparameters, mode=mode)
+# Init Rosetta
+init()
+# Init environment
+env = SingleProtEnv(hyperparameters["Env"], pdb_file=None, seq="AA")
+
+# UNCOMMENT BELOW TO PRINT TORSIONS
+# print(env.get_state())
+# for torsion_id in env.torsion_ids_to_change:
+#     print(torsion_id.rsd())
+#     print(torsion_id.type())
+#     print(torsion_id.torsion())
+
+# Set seeds
+# env.seed(seed)
+# env.action_space.seed(seed)
+# torch.manual_seed(seed)
+# np.random.seed(seed)
+# # Init Agent
+# agent = SAC(env.action_space, env, hyperparameters)
+# wandb.watch(agent.policy, log='gradients') # Log parameters and gradients of actor and critic
+# wandb.watch(agent.critic, log='gradients')
+# # Init Memory
+# memory = ReplayMemory(replay_size, seed)
+
+# # Training Loop
+# total_numsteps = 0
+# total_eval_numsteps = 0
+# eval_iepisode = 0
+# updates = 0
+# global_wandb_step = 0
+# # Store network topology in ONNX
+# dummy_state = torch.rand(1, agent.num_nodes * (agent.node_dim + agent.num_nodes)).to(device)
+# dummy_action = torch.rand(1, agent.input_action_dim).to(device)
+# agent.save_model('SingleProtEnv', suffix='.onnx', actor_input=(dummy_state), critic_input=(dummy_state, dummy_action))
+# wandb.save("./models/sac_actor_SingleProtEnv_.onnx")
+# wandb.save("./models/sac_critic_SingleProtEnv_.onnx")
+# del dummy_state
+# del dummy_action
+
+# # Loop through episodes infintely
+# lowest_energy = np.finfo(np.float32).max
+# for i_episode in itertools.count(1):
+#     episode_reward = 0
+#     episode_steps = 0
+#     done = False
+#     # Reset environment
+#     new_output_pdb = output_pdb
+#     state = env.reset(new_output=new_output_pdb)
+#     init_energy = env.cur_score
+#     print("-------------------------------------")
+#     print("Init Energy: {}".format(init_energy))
+#     while not done:
+#         # Sample random action for a while
+#         if start_steps > total_numsteps:
+#             action = env.action_space.sample()  # Sample random action
+#         else:
+#             action = agent.select_action(state)  # Sample action from policy
+
+#         if len(memory) > batch_size:
+#             # Number of updates per step in environment
+#             for i in range(updates_per_step):
+#                 # Update parameters of all the networks
+#                 critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory, batch_size, updates)
+#                 updates += 1
         
-        self.device = hyperparams['device']
+#         # Transiton to next state 
+#         next_state, reward, done, _ = env.step(action) # Step
 
-        print("Preparing Critic networks...")
-        self.critic = Critic(crit_hyp["conv_dim"], self.node_dim, self.edge_dim, crit_hyp["z_dim"], crit_hyp["action_dim"], self.input_action_dim, self.tensor_shapes).to(self.device)
-        self.critic_optim = Adam(self.critic.parameters(), lr=self.lr)
+#         # Ignore the "done" signal if it comes from hitting the time horizon.
+#         # (https://github.com/openai/spinningup/blob/master/spinup/algos/sac/sac.py)
+#         mask = 1 if episode_steps == env._max_episode_steps else float(not done)
+#         # Log Episode step info
+#         if total_numsteps % 25 == 0:
+#             print("-------------------------------------")
+#             print("Episode: {} | Episode Step: {} | Action: {} | Reward: {}, Energy: {}".format(i_episode, episode_steps, action, reward, env.prot.get_score()))
+#         memory.push(state, action, reward, next_state, mask) # Append transition to memory
+#         # Save Model
+#         if total_numsteps % 10 == 0:
+#             agent.save_model("SingleProtEnv")
 
-        self.critic_target = Critic(crit_hyp["conv_dim"], self.node_dim, self.edge_dim, crit_hyp["z_dim"], crit_hyp["action_dim"], self.input_action_dim, self.tensor_shapes).to(self.device)
-        hard_update(self.critic_target, self.critic)
+#         episode_steps += 1
+#         total_numsteps += 1
+#         episode_reward += reward
+#         state = next_state
+    
+#     # Keep track of the lowest energy conformation found
+#     if env.cur_score < lowest_energy:
+#         wandb.run.summary["best_energy"] = env.cur_score
+#         wandb.run.summary["best_pose_step"] = total_numsteps 
+#         lowest_energy = env.cur_score
+        
+#     print("Final Energy: {}".format(env.cur_score))
+#     wandb_log_dict = {"train_final_energy": env.cur_score, "train_init_energy": init_energy, "train_cum_reward": episode_reward,  "train_episode": i_episode, "total_numsteps": total_numsteps}
+#     # Log metrics
+#     wandb.log(wandb_log_dict)
 
-        if self.policy_type == "Gaussian":
-            # Target Entropy = −dim(A) (e.g. , -6 for HalfCheetah-v2) as given in the paper
-            if self.automatic_entropy_tuning is True:
-                self.target_entropy = -torch.prod(torch.Tensor(action_space.shape).to(self.device)).item()
-                self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
-                self.alpha_optim = Adam([self.log_alpha], lr=self.lr)
+#     print("Episode: {}, total numsteps: {}, episode steps: {}, reward: {}".format(i_episode, total_numsteps, episode_steps, round(episode_reward, 2)))
+#     # Evaluate Agent and save to VMD
+#     if i_episode % 10 == 0 and do_eval is True:
+#         avg_reward = 0.
+#         avg_energy_change = 0.
+#         episodes = 10
+#         for _  in range(episodes):
+#             state = env.reset(new_output=output_pdb_test)
+#             init_energy = env.cur_score
+#             episode_reward = 0
+#             done = False
+#             while not done:
+#                 action = agent.select_action(state, evaluate=True)
 
-            self.policy = Actor(act_hyp["conv_dim"], self.node_dim, self.edge_dim, self.input_action_dim * 2, self.tensor_shapes, action_space=action_space).to(self.device)
-            self.policy_optim = Adam(self.policy.parameters(), lr=self.lr)
+#                 next_state, reward, done, _ = env.step(action)
+#                 episode_reward += reward
 
-        #else:
-        #    self.alpha = 0
-        #    self.automatic_entropy_tuning = False
-        #    self.policy = DeterministicPolicy(num_inputs, action_space.shape[0], args.hidden_size, action_space).to(self.device)
-        #    self.policy_optim = Adam(self.policy.parameters(), lr=args.lr)
-
-
-    # Selects an action
-    def select_action(self, state, evaluate=False, use_mean=False):
-        state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
-        if evaluate is False:
-            action, _, _ = self.policy.sample(state)
-        else:
-            _, _, action = self.policy.sample(state)
-        return action.detach().cpu().numpy()[0]
-
-    # Updates the parameters of the actor and critic
-    def update_parameters(self, memory, batch_size, updates):
-        # Sample a batch from memory
-        state_batch, action_batch, reward_batch, next_state_batch, mask_batch = memory.sample(batch_size=batch_size)
-
-        state_batch = torch.FloatTensor(state_batch).to(self.device)
-        next_state_batch = torch.FloatTensor(next_state_batch).to(self.device)
-        action_batch = torch.FloatTensor(action_batch).to(self.device)
-        reward_batch = torch.FloatTensor(reward_batch).to(self.device).unsqueeze(1)
-        mask_batch = torch.FloatTensor(mask_batch).to(self.device).unsqueeze(1)
-
-        with torch.no_grad():
-            next_state_action, next_state_log_pi, _ = self.policy.sample(next_state_batch)
-            qf1_next_target, qf2_next_target = self.critic_target(next_state_batch, next_state_action)
-            min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - self.alpha * next_state_log_pi
-            next_q_value = reward_batch + mask_batch * self.gamma * (min_qf_next_target)
-        qf1, qf2 = self.critic(state_batch, action_batch)  # Two Q-functions to mitigate positive bias in the policy improvement step
-        qf1_loss = F.mse_loss(qf1, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
-        qf2_loss = F.mse_loss(qf2, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
-        qf_loss = qf1_loss + qf2_loss
-
-        self.critic_optim.zero_grad()
-        qf_loss.backward()
-        self.critic_optim.step()
-
-        pi, log_pi, _ = self.policy.sample(state_batch)
-
-        qf1_pi, qf2_pi = self.critic(state_batch, pi)
-        min_qf_pi = torch.min(qf1_pi, qf2_pi)
-
-        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean() # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
-
-        self.policy_optim.zero_grad()
-        policy_loss.backward()
-        self.policy_optim.step()
-
-        if self.automatic_entropy_tuning:
-            alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
-
-            self.alpha_optim.zero_grad()
-            alpha_loss.backward()
-            self.alpha_optim.step()
-
-            self.alpha = self.log_alpha.exp()
-            alpha_tlogs = self.alpha.clone() # For TensorboardX logs
-        else:
-            alpha_loss = torch.tensor(0.).to(self.device)
-            alpha_tlogs = torch.tensor(self.alpha) # For TensorboardX logs
+#                 state = next_state
+#             avg_reward += episode_reward
+#             avg_energy_change += env.cur_score - init_energy
+#             eval_iepisode += 1
+#             # Log per episode metrics
+#             wandb.log({"eval_episode": eval_iepisode, "eval_init_energy": init_energy, "eval_final_energy": env.cur_score, "eval_cum_reward": episode_reward})
+#         avg_reward /= episodes
+#         avg_energy_change /= episodes
 
 
-        if updates % self.target_update_interval == 0:
-            soft_update(self.critic_target, self.critic, self.tau)
+#         print("----------------------------------------")
+#         print("Test Episodes: {}, Avg. Reward: {}".format(episodes, round(avg_reward, 2)))
+#         print("----------------------------------------")
+#         # Log Average test metrics
+#         wandb.log({"eval_delta_energy": avg_energy_change, "eval_avg_reward": avg_reward})
+        
+#     # Stop when we reach the max total steps
+#     if total_numsteps > num_steps:
+#         break
+    
+#     # Save model one last time before finished
+#     agent.save_model("SingleProtEnv")
+#     global_wandb_step += 1
 
-        return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(), alpha_tlogs.item()
-
-    # Save model parameters
-    def save_model(self, env_name, suffix="", actor_input=None, critic_input=None, actor_path=None, critic_path=None, critic_target_path=None):
-        if not os.path.exists('models/'):
-            os.makedirs('models/')
-
-        if actor_path is None:
-            actor_path = "models/sac_actor_{}_{}".format(env_name, suffix)
-        if critic_path is None:
-            critic_path = "models/sac_critic_{}_{}".format(env_name, suffix)
-        if critic_target_path is None:
-            critic_target_path = "models/sac_critic_target_{}_{}".format(env_name, suffix)
-        #print('Saving models to {} and {}'.format(actor_path, critic_path))
-        # Saev as onnx just to store topology
-        if suffix == ".onnx" and actor_input != None and critic_input != None:
-            torch.onnx.export(self.policy, actor_input, actor_path)
-            torch.onnx.export(self.critic, critic_input, critic_path)
-        # Save pytorch state dict
-        elif suffix != ".onnx":
-            torch.save(self.policy.state_dict(), actor_path)
-            torch.save(self.critic.state_dict(), critic_path)
-            torch.save(self.critic_target.state_dict(), critic_target_path)
-
-    # Load model parameters
-    def load_model(self, actor_path, critic_path):
-        print('Loading models from {} and {}'.format(actor_path, critic_path))
-        if actor_path is not None:
-            self.policy.load_state_dict(torch.load(actor_path))
-        if critic_path is not None:
-            self.critic.load_state_dict(torch.load(critic_path))
-
-
+# env.close()

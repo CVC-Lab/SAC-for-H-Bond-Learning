@@ -68,6 +68,7 @@ class Prot:
 
         # Atom ID to pdb_atom_id dict
         self.incl_adj = False
+
         self.atom_id_to_pdb_id = {}
         # Store pdb file name and psf file name
         self.pdb_file = pdb_file
@@ -99,6 +100,7 @@ class Prot:
         self.update_cart_coords()
         # Set the scoring functon
         self.score_function = self.set_score_function(only_hbond=False)
+        print("reached")
         self.score_function.setup_for_packing(self.pose, self.pack_task.repacking_residues(), self.pack_task.designing_residues())
         # Set up packer graph now that score function is set
         self.pack_graph = create_packer_graph(self.pose, self.score_function, self.pack_task)
@@ -356,10 +358,31 @@ class Prot:
                 torsion_ids.append(TorsionID(res_index, TorsionType.BB, 1))
                 torsion_ids.append(TorsionID(res_index, TorsionType.BB, 2))
             if torsion_type != "backbone":
-                chis = self.get_sidechain_angles(res_index)
                 for chi_index in range(1, self.pose.residue(res_index).nchi() + 1):
                     torsion_ids.append(TorsionID(res_index, TorsionType.CHI, chi_index))
         return np.array(torsion_ids)
+    
+    # Gets the torsion angles at a given torsion id
+    def get_torsion_angles(self, torsion_ids):
+        torsion_angles = np.zeros(len(torsion_ids))
+        for index, torsion_id in enumerate(torsion_ids):
+            res_index = torsion_id.rsd()
+            torsion_type = torsion_id.type()
+            torsion_num = torsion_id.torsion()
+            #  Set the backbone angle
+            if torsion_type == TorsionType.BB:
+                if torsion_num == 1:
+                    torsion_angles[index] = self.pose.phi(res_index)
+                elif torsion_num == 2:
+                    torsion_angles[index] = self.pose.psi(res_index)
+                else:
+                    raise Exception("Invalid torsion number for backbone")
+            # Set the sidechain angle
+            elif torsion_type == TorsionType.CHI:
+                torsion_angles[index] = self.get_sidechain_angle(res_index, torsion_num)
+            else:
+                raise Exception("Invalid torsion type")
+        return torsion_angles
     
     # Sets all the torsion ids in the list to the new torsions
     def set_torsion_ids(self, torsion_ids, new_torsions):

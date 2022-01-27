@@ -11,7 +11,6 @@ import wandb
 
 
 class SingleProtEnv(gym.Env):
-    
     # Initialize the protein environment
     def __init__(self, hyperparameters, pdb_file=None, seq=None, psf_file=None, mol2_file=None, prm_file=None, rtf_file=None, aprm_file=None, pdb_id=None):
         metadata = {
@@ -23,6 +22,7 @@ class SingleProtEnv(gym.Env):
         self.discount_rate = hyperparameters["discount_rate"]
         self.discount_rate_threshold = hyperparameters["discount_rate_threshold"]
         self.max_time_step = hyperparameters["max_time_step"]
+        self.state_type = hyperparameters["state_type"]
         # Set time step
         self.time_step = 0
         self.total_step = 0
@@ -75,6 +75,7 @@ class SingleProtEnv(gym.Env):
 
         eps=0.001
         # Perturb torsion angles by angle change to transition to next state
+        # TODO: Should this be here?
         self.prot.perturb_torsion_ids(self.torsion_ids_to_change, angle_change + \
             eps*(np.exp(-self.prot.get_score()))*np.clip(np.random.normal(), -1, 1))
         self.prot.update_cart_coords()
@@ -87,13 +88,18 @@ class SingleProtEnv(gym.Env):
         self.total_step += 1
         return reward
 
-    # Returns the state which consists of
+    # Returns the state which consists of either molecular graph or an array of torsion angles
     # 1. Feature matrix (num_atoms x num_features)
     # 2. Adjacency List (num_atoms x num_neighbors_per_atom)
     def get_state(self):
-        flat_features = np.ndarray.flatten(self.prot.atom_chem_features)
-        flat_adj_mat = self.prot.bond_adj_mat.reshape(-1)
-        return np.concatenate((flat_features, flat_adj_mat), axis=None)
+        # Return torsions
+        if self.state_type == "torsions":
+            return self.prot.get_torsion_angles(self.torsion_ids_to_change)
+        # Return atomic features
+        else:
+            flat_features = np.ndarray.flatten(self.prot.atom_chem_features)
+            flat_adj_mat = self.prot.bond_adj_mat.reshape(-1)
+            return np.concatenate((flat_features, flat_adj_mat), axis=None)
     
     # Given the angle_chain in radians gets the reward
     # Computes $r(s_t, a_t) \gets e^{\gamma t/T}[(\sum_{j=1}^M \dot{d}_j^2)/2-E_t]$
@@ -106,7 +112,7 @@ class SingleProtEnv(gym.Env):
         # \gamma t/T}[(\sum_{j=1}^M \dot{d}_j^2)/2-E_t
         # Reward
         #return -(self.cur_score - old_score) 
-        return exp_term * (np.sum(angle_change ** 2)/2 - 0.03*self.cur_score)
+        return exp_term * (np.sum(angle_change ** 2)/2 - self.cur_score)
 
 
     # Checks if we are in terminal state
