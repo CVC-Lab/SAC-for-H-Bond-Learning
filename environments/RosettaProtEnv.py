@@ -1,4 +1,4 @@
-from utils import tensors_to_flat, append_pdb
+from utilities.utils import tensors_to_flat, append_pdb
 from environments.EnvBase import EnvBase
 from mol_processors.RosettaProtein import RosettaProt
 import numpy as np

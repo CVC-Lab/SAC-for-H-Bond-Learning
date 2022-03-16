@@ -4,7 +4,6 @@ import os
 from collections import Iterable
 from datetime import datetime as dt
 import shutil
-from matplotlib.patches import Ellipse
 import matplotlib.pyplot as plt
 import math
 import MDAnalysis as mda

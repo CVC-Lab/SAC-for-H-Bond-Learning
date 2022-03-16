@@ -6,3 +6,4 @@ experiments/results/
 experiments/runs/
 experiments/wandb/
 data/
+*/build/

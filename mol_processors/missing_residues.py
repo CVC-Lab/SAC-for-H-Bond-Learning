@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from modeller import *
 from modeller.automodel import *
-from utils import  sum_seq_in_dict, str_insert
+from utilities.utils import  sum_seq_in_dict, str_insert
 from mol_processors.pdb_processor import download_pdb, parse_pdb_header, res_3to1
 from Bio.PDB import *
 

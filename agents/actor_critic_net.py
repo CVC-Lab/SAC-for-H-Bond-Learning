@@ -1,5 +1,5 @@
 from custom_nn_modules.Graph_NNs import GraphConvolution, GraphAggregation, MLP
-from utils import soft_update, hard_update, create_log_gaussian, logsumexp, batch_flat_to_tensors
+from utilities.utils import soft_update, hard_update, create_log_gaussian, logsumexp, batch_flat_to_tensors
 import torch.nn.functional as F
 from torch.distributions import Normal
 import torch

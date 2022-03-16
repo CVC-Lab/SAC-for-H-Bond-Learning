@@ -18,7 +18,7 @@ from pyrosetta.rosetta.protocols.relax import FastRelax
 # Custom Libraries
 from mol_processors.pdb_processor import download_pdb, get_coords, pdb_to_intcoords, visualize_protein
 from mol_processors.RosettaProtein import RosettaProt
-from utils import write_array
+from utilities.utils import write_array
 
 # Initialize Rosetta
 init()

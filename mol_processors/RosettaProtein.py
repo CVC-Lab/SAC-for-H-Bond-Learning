@@ -1,6 +1,6 @@
 # Imports
 import random
-from utils import write_array
+from utilities.utils import write_array
 from Octree.octree import Protein
 import MDAnalysis as mda
 from MDAnalysis.coordinates.memory import MemoryReader
