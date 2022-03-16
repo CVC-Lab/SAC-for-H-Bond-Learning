@@ -1,44 +1,91 @@
 # Standard imports
 import numpy as np
 import os
-
-# Imports to parse MD simulation files and PDB files
-import MDAnalysis as mda
-from MDAnalysis.analysis.bat import BAT
-import nglview as nv
-
 from Bio.PDB import PDBParser, Select, PDBIO
+import nglview as nv
 
 # Dictionary for converting three letter residue abbreviations to 1 letter code 
 res_3to1 = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
      'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W', 
      'ALA': 'A', 'VAL':'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M'}
-     
-# Converts the atomsitic positions to internal coordinates using mdanalysis
-# In interanl coordinates, each atom is defined by
-# 1. Bond Length (defined by 2 atoms)
-# 2. Bond Angle (defined by 3 atoms)
-# 3. Dihedral Angle (defined by 4 atoms)
-# 
-# Returns a N x 4 numpy matrix representing the internal coordinates 
-def pdb_to_intcoords(psf, pdb):
-    u = mda.Universe(psf, pdb)
-    # Select all atoms associated with a protein
-    protein_residues = u.select_atoms("protein")
-    intern = BAT(protein_residues)
-    intern.run()
-    return intern
 
-# Returns a NGLView object to visualize a protein
-# psf (str): path to the psf file
-# coords (str): path to pdb file or traj file (dcd, xtc,...)
-def visualize_protein(psf, coords, default=None, default_representation=False):
-    u = mda.Universe(psf, coords)
-    # Select all atoms associated with a protein
-    protein_residues = u.select_atoms("protein")
-    w = nv.show_mdanalysis(protein_residues, default=default, default_representation=default_representation)
-    return w
+# TODO: implement getting atom indices for a residue and `set_coords`
+# TODO: Verify that the PDBParser actually works
+
+class PDBParser:
+    """
+    Uses biopython to extract protein information from PDBs or PQR files. Currently, there
+    can only be one PDBParser per chain.
+    """
+    def __init__(self, pdb_path, chain_id=None):
+        parser = PDBParser()
+        self.structure = parser.get_structure("mol", pdb_path)
+
+        # Grab first chain of first model as the protein if not specfied
+        if chain_id is None:
+            self.chain = self.structure[0]["A"]
+        self.total_res = len(self.chain)
+        self.residues = list(self.chain.get_residues())
+        return
+    
+    def get_res_atom_indices(self, res_id):
+        """
+        Grabs the indices of the atoms in a residue
+        """
+        return
+
+    def get_num_residues(self):
+        return self.total_res
+
+    def get_coords(self):
+        """
+        Extracts the atomic coordinates from the PDB
+        """
+        coords = []
+        for atom in self.chain.get_atoms():
+            coords.append(atom.get_coord())
+        return np.array(self.coords)
+    
+    def set_coords(self, new_coords):
+        """
+        Sets the coordinates of the protein in the PDB Parser. This is mainly to allow user
+        to visualize what a protein looks like after a transformation with `visualize_protein`
+        """
+        return
+
+    def get_charges(self):
+        """
+        Extracts the charges for each atom. This will only return relevant information if
+        the PDB is a PQR file
+        """
+        charges = []
+        for atom in self.chain.get_atoms():
+            charges.append(atom.get_charge())
+        return np.array(charges)
+
+    def get_radii(self):
+        """
+        Extracts the atomic radii for each atom. This will only return relevant information if
+        the PDB is a PQR file
+        """
+        radii = []
+        for atom in self.chain.get_atoms():
+            radii.append(atom.get_radius())
+        return np.array(radii)
+    
+    def visualize_protein(self, default=None, default_representation=False):
+        """
+        Visualize a protein structure using Nglview
+        Args:
+            default (str): the default color for the protein
+            default_representation (str): default representation for the protein
+        
+        Returns:
+            viz: the NGLWidget object
+        """
+        viz = nv.show_biopython(self.structure, default=default, default_representation=default_representation)
+        return viz
 
 # Downloads a given pdb id from the PDB database to output file name
 # Default output is the current directory
@@ -56,41 +103,6 @@ def download_pdb (pdb_id, output_dir=None):
     else:
         print ("The file already exists")
     return 
-
-# Grabs coordinates from a file and returns a numpy array of coords.
-# Optionally save coords to pdb or npy file
-# 
-# coord_path (str): path to the trajectory or pdb file
-# top_path (str): path to the topology file
-# file_type (str): type of coord file (dcd or pdb)
-# save_pdbs (bool): if True, saves the coordinates to a pdb file
-# Return: N x 3 Numpy array of coords
-def get_coords(coord_path, top_path, file_type="dcd", save_pdbs=False, save_np=False, np_file="prot_coords.npy"):
-    u = mda.Universe(top_path, coord_path)
-    protein = u.select_atoms("protein")
-    result = []
-    
-    # Case if the file is a trajectory file
-    if file_type == "dcd":
-        # Add the postions of the protein at each timestep to result
-        for ts in u.trajectory:
-            print(ts)
-            result.append(ts.positions)
-        # Option to save pdbs of each trajectory
-        if (save_pdbs):
-            with mda.Writer("protein.pdb", protein.n_atoms) as W:
-                for ts in u.trajectory:
-                    W.write(protein)
-    
-    # Case if the file is a single pdb file
-    elif file_type == "pdb":
-        result.append(u.positions)
-
-    # Return a numpy array of type float64
-    result = np.array(result).astype(np.float64)
-    if save_np == True:
-        np.save(np_file, result)
-    return result
 
 # Extract chains from a PDB File and save them as separate PDB files
 # 
@@ -154,8 +166,3 @@ if __name__ == '__main__':
     dcd_file = "/mnt/c/Users/conra/CHARMM PDB Sims/1acb_b_rmin_full.dcd"
     pdb_file = "/mnt/c/Users/conra/CHARMM PDB Sims/1acb_b_rmin.pdb"
     top_file = "/mnt/c/Users/conra/CHARMM PDB Sims/1acb_b_rmin.psf"
-    coors = get_coords(pdb_file, top_file, save_np=True, np_file="/home/conradli/Learning-Viral-Assembly-Pathways-with-RL-/data/1acb/1acb_coords_pdb.npy")
-    print(coors)
-    print(coors.shape)
-    output_path="/home/conrad/Oct-GP/Learning-Viral-Assembly-Pathways-with-RL-/data/6gyp/chains"
-    print("No compile errors")

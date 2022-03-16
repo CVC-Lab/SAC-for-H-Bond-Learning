@@ -7,7 +7,6 @@ setup(
     author='Conrad Li',
     author_email='conradliste@utexas.edu',
     requires=[ 'numpy', 'matplotlib',],
-    py_modules=['config'],
     packages=['utilities', ],
     package_data={
     	'utilities': ['*'],

@@ -3,7 +3,7 @@ from xmlrpc.client import Boolean
 import MDAnalysis as mda
 import numpy as np
 from Bio.PDB import PDBParser
-from mol_processors.constants import TORSION_TYPES
+from constants import TORSION_TYPES
 
 class Prot:
     # TODO: Chain ID set to not none is not implemented
@@ -78,6 +78,11 @@ class Prot:
             index: the index of the atom (zero-indexed)
         '''
         return self.charges[index]
+    
+    def set_charge(self, index: int):
+        """
+        Sets the char
+        """
 
     
     def get_radius(self, index: int):
@@ -202,7 +207,7 @@ class Prot:
         self.need_to_update_cartcoords = False
         return
     
-    def update_intcoords_from_cartcoords(self):
+    def update_intcoords_from_cartcoords(self, method="biopython"):
         """
         Updates internal coordinates to match the Cartesian coordinates
         """

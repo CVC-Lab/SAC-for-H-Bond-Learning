@@ -4,6 +4,17 @@ Code currently adopted from https://github.com/p-christ/Deep-Reinforcement-Learn
 Paper: https://arxiv.org/pdf/2010.02193.pdf
 
 
+## Dependencies
+
+-numpy
+-matplotlib
+-torch
+-biopython
+-MDAnalysis
+-pybind11
+-pynerf
+-
+
 ## Running the code
 
 Before running the code, you must first call the setup.py file in the utilities as so
