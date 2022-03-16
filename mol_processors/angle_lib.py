@@ -102,14 +102,14 @@ class BackboneDihedralLibrary:
             raise FileNotFoundError("Could not find backbone dihedral library files")
         return
     
-    def get_backbone_dist(self, aa: str, left_neighbor, right_neighbor):
+    def get_backbone_dist(self, aa: str, left_neighbor: str, right_neighbor: str):
         """
-        Returns backbone dihedrals and their probabilities given 3 consecutive residues
+        Returns backbone dihedrals and their probabilities given 3 consecutive neighboring residues
 
         Args:
-            aa: 3-letter abbreviation of central residue
-            left_neighbor: 3-letter abbreviation of left residue
-            right_neighbor: 3-letter abbreviation of right residue
+            aa (str): 3-letter abbreviation of central residue
+            left_neighbor (str): 3-letter abbreviation of left residue
+            right_neighbor (str): 3-letter abbreviation of right residue
         
         Returns:
             phi_psi_probs: a ndarray of probabilities of the ith phi-psi angles in `phi_psi_samples`
