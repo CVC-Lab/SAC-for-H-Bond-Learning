@@ -56,17 +56,17 @@ cdef extern from "mol.0.0.6.h":
     cdef struct my_par
     cdef void ag2array( double* array, atomgrp * ag)
     cdef void array2ag ( double* array, atomgrp * ag)
-    cdef atomgrp* create_atomgrp (char *pdbFile, char *pdbFixedFile, char *psfFile, char *mol2File, char *prmFile, char *rtfFile, char *aprmFile, int useHbond) 
+    cdef atomgrp * create_atomgrp (char *pdbFile, char *pdbFixedFile, char *psfFile, char *mol2File, char *prmFile, char *rtfFile, char *aprmFile, int useHbond) 
     cdef void hydro_min (atomgrp * ag, char* pdbFile, char *outnFile, char *outoFile, int maxIter, int useHbond, double *dcHbond, double *dcVdw, double *dcElec)
     cdef void my_en_grad( int n, double *inp, void *prms, double *en, double *grad )
-    cdef my_par* create_par(atomgrp* ag, int useVdw, int useElec, int useHbond ,double *dcVdw, double *dcElec, double *dcHbond, double aprxVdw, double aprxElec)
-    cdef int * get_bondls (atomgrp* ag, atom* a)
+    cdef my_par * create_par(atomgrp * ag, int useVdw, int useElec, int useHbond ,double *dcVdw, double *dcElec, double *dcHbond, double aprxVdw, double aprxElec)
+    cdef int * get_bondls (atomgrp * ag, atom * a)
     cdef void only_find_neighbors(int n, double *inp, void *prms)
 
 cdef class Protein:
-    cdef atomgrp* ag_ptr
-    cdef my_par* my_parms
-    cdef double* atom_coords
+    cdef atomgrp * ag_ptr
+    cdef my_par * my_parms
+    cdef double * atom_coords
     cdef dict __dict__
     cdef char *pdbFile
     cdef char *psfFile 
@@ -90,7 +90,7 @@ cdef class Protein:
 
     def __init__(self, char *pdbFile, char *psfFile, char *mol2File, char *prmFile, char *rtfFile, char *aprmFile):
         # Set Params
-        # path_prefix = "/home/jeffreymo572/Research/SAC-for-H-Bond-Learning/Octree/FromBU/oct-example/"
+        path_prefix = "/home/jeffreymo572/Research/SAC-for-H-Bond-Learning/Octree/FromBU/oct-example/"
         self.maxIter = 100
         #self.noOct = 0
         #self.noNblist = 0
@@ -160,11 +160,6 @@ cdef class Protein:
     def extract_features(self):
         return get_atomistic_features(self.ag_ptr)
 
-    def printNeighborLists(self):
-        for i in range(len(self.num_neighbor_lists)):
-            print(i, self.neighbor_lists[i])
-        return
-
 # Only finds neighbors
 cdef only_get_neighbors(np.float64_t[:] new_coords, int active_atoms_dims, void *prms):
     cdef np.float64_t* addr = &new_coords[0]
@@ -177,8 +172,7 @@ cdef calc_energy (np.float64_t[:] new_coords, int active_atoms_dims, void *prms,
     my_en_grad(active_atoms_dims, addr, prms, en, NULL)
     return
 
-# For each 
-cdef get_atomistic_features(atomgrp* ag_ptr):
+cdef get_atomistic_features(atomgrp * ag_ptr):
     charges = [None] * ag_ptr.natoms
     radii = [None] * ag_ptr.natoms
     names = [None] * ag_ptr.natoms
@@ -198,7 +192,7 @@ cdef get_atomistic_features(atomgrp* ag_ptr):
 # neighbor_type: type of neighborhood
 #   1: base neighbors on dist cutoff
 #   anything else: base neighbors on covalent bonds 
-cdef get_neighbor_lists (atomgrp* ag_ptr, int neighbor_type):
+cdef get_neighbor_lists (atomgrp * ag_ptr, int neighbor_type):
     neighbor_lists = [None] * ag_ptr.natoms
     num_neighbors_lists = [None] * ag_ptr.natoms
     # Our neighborhood is based on the hbond dist cutoff

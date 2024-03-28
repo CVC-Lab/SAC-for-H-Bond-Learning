@@ -553,10 +553,10 @@ void only_find_neighbors(int n, double *inp, void *prms)
         array2ag(inp, mag);
       }
 
-    int mqcheck = ( ( struct my_par * ) prms )->nbupdate;
-    struct agsetup *mags = ( ( struct my_par * ) prms )->ags;
+    int mqcheck = ( ( struct my_par* ) prms )->nbupdate;
+    struct agsetup *mags = (( struct my_par* ) prms )->ags;
 
-    OCTREE_PARAMS *octpar = ( ( struct my_par * ) prms )->octpar;
+    OCTREE_PARAMS *octpar = ( ( struct my_par* ) prms )->octpar;
 
     if ( octpar != NULL ) reorganize_octree( octpar->octree_static, 1 );
     else

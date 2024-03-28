@@ -3,7 +3,7 @@ from octree import Protein
 
 
 if __name__ == '__main__':
-    path_prefix = "/home/conradli/Learning-Viral-Assembly-Pathways-with-RL-/src/Octree/FromBU/oct-example/"
+    path_prefix = "/home/jeffreymo572/Research/SAC-for-H-Bond-Learning/Octree/FromBU/oct-example/"
     # File Paths for param and pdb files
     pdbFile = bytes(path_prefix + "examples/1acb_b_rmin.pdb", encoding="ascii")
     pdbFixedFile = bytes(path_prefix + "examples/1acb_b_rmin-fixed.pdb", encoding="ascii")

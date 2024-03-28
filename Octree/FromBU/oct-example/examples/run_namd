@@ -16,7 +16,7 @@ set output ${file_id}_${current}
 structure          ${file_id}_xplor.psf;
 coordinates        ${file_id}.pdb;
 paraTypeCharmm     on;
-parameters         /home/conradli/SAC-for-H-Bond-Learning/data/params/parm_new.prm;
+parameters         /home/jeffreymo572/Research/SAC-for-H-Bond-Learning/data/params/parm_new.prm;
 exclude            scaled1-4;
 1-4scaling         1;
 COMmotion          no;

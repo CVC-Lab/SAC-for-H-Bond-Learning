@@ -7,7 +7,7 @@ read rtf card name $CHARMM_HOME/toppar/top_all22_prot.rtf
 read param card name $CHARMM_HOME/toppar/par_all22_prot.prm
 
 ! Read sequence from the PDB coordinate file
-open unit 1 card read name 1bdd_non_charmm.pdb
+open unit 1 card read name 1bdd.pdb
 read sequ pdb unit 1
 
 ! now generate the PSF and also the IC table (SETU keyword)
@@ -34,17 +34,12 @@ hbuild
 
 ! write out the protein structure file (psf) and
 ! the coordinate file in pdb and crd format.
-
+write coor pdb name 1bdd_pnon_charmm.pdb
 write coor pdb name 1bdd_pdb2pqr_charmm.pdb
 * PDB
 *
-
+write psf CARD OLDPSF name 1bdd_pnon_charmm.psf
 write psf CARD OLDPSF name 1bdd_pdb2pqr_charmm.psf
 * PSF
 *
-
 write coor card name 1bdd_pnon_charmm.crd
-* Coords
-*
-
-stop

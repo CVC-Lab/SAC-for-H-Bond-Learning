@@ -1,10 +1,8 @@
 import os 
 
-run_charmm_origin_path = "/home/jeffreymo572/SAC-for-H-Bond-Learning/data/1BDD/run_charmm.inp"
-path_to_charmm_app = "/home/jeffreymo572/Mol2_File_Conversion/charmm/charmm/bin/charmm"
-base_path = "/home/jeffreymo572/Mol2_File_Conversion"
-molecule_list = ["1dv0"]
-
+run_charmm_origin_path = "/home/jeffreymo572/Research/SAC-for-H-Bond-Learning/data/1BDD/run_charmm.inp"
+path_to_charmm_app = "/home/jeffreymo572/charmm/charmm/bin/charmm"
+molecule_list = ["1BDD"]
 
 
 for molecule in molecule_list:
